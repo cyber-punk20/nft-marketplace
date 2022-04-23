@@ -1,4 +1,4 @@
-require('web3')
+web3 = require('web3')
 describe("NFTMarket", function() {
   it("Should create and execute market sales", async function() {
     const Market = await ethers.getContractFactory("NFTMarket")
@@ -21,8 +21,10 @@ describe("NFTMarket", function() {
 
     hextag = web3.utils.asciiToHex('Storm');
     tag = web3.utils.hexToBytes(hextag)
-    await market.createMarketItem(nftContractAddress, 1, auctionPrice, { value: listingPrice }, [tag])
-    await market.createMarketItem(nftContractAddress, 2, auctionPrice, { value: listingPrice }, [tag])
+    tagArr = [tag]
+    console.log(tagArr)
+    await market.createMarketItem(nftContractAddress, 1, auctionPrice, tagArr, { value: listingPrice })
+    await market.createMarketItem(nftContractAddress, 2, auctionPrice, tagArr, { value: listingPrice })
     
     const [_, buyerAddress] = await ethers.getSigners()
 
@@ -31,12 +33,19 @@ describe("NFTMarket", function() {
     items = await market.fetchMarketItems()
     items = await Promise.all(items.map(async i => {
       const tokenUri = await nft.tokenURI(i.tokenId)
+      let tags = []
+      for(tag of i.tags) {
+        tag = web3.utils.hexToAscii(web3.utils.bytesToHex(tag))
+        tags.push(tag)
+      }
+      
       let item = {
         price: i.price.toString(),
         tokenId: i.tokenId.toString(),
         seller: i.seller,
         owner: i.owner,
-        tokenUri
+        tokenUri,
+        tags: tags
       }
       return item
     }))

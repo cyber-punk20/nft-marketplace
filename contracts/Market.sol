@@ -28,7 +28,7 @@ contract NFTMarket is ReentrancyGuard {
     address payable owner;
     uint256 price;
     bool sold;
-    string[] tags;
+    bytes[][] tags;
   }
 
   mapping(uint256 => MarketItem) private idToMarketItem;
@@ -41,7 +41,7 @@ contract NFTMarket is ReentrancyGuard {
     address owner,
     uint256 price,
     bool sold,
-    string[] tags
+    bytes[][] tags
   );
   /* Returns the estimate price of the contract */
   function getEstimatePrice() public view returns (uint256) {
@@ -57,7 +57,7 @@ contract NFTMarket is ReentrancyGuard {
     address nftContract,
     uint256 tokenId,
     uint256 price,
-    string[] memory tags
+    bytes[][] memory tags
   ) public payable nonReentrant {
     require(price > 0, "Price must be at least 1 wei");
     require(msg.value == listingPrice, "Price must be equal to listing price");
