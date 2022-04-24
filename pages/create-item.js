@@ -1,7 +1,11 @@
+const web3 = require('web3')
 import { useState } from 'react'
 import { ethers } from 'ethers'
 import { create as ipfsHttpClient } from 'ipfs-http-client'
 import { useRouter } from 'next/router'
+import ReactTagInput from "@pathofdev/react-tag-input";
+import "@pathofdev/react-tag-input/build/index.css";
+// import TagsInput from './tag-input'
 import Web3Modal from 'web3modal'
 
 const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
@@ -16,6 +20,7 @@ import Market from '../artifacts/contracts/Market.sol/NFTMarket.json'
 export default function CreateItem() {
   const [fileUrl, setFileUrl] = useState(null)
   const [formInput, updateFormInput] = useState({ price: '', name: '', description: '' })
+  const [tags, setTags] = useState(["Iot Data"])
   const router = useRouter()
 
   async function onChange(e) {
@@ -63,15 +68,23 @@ export default function CreateItem() {
     let event = tx.events[0]
     let value = event.args[2]
     let tokenId = value.toNumber()
-
+    let byteTags = []
+    console.log(tags)
+    for(const tag of tags) {
+      // console.log(typeof(tag))
+      let hextag = web3.utils.asciiToHex(tag.toString());
+      let byteTag = web3.utils.hexToBytes(hextag);
+      byteTags.push(byteTag)
+    }
+    
     const price = ethers.utils.parseUnits(formInput.price, 'ether')
   
     /* then list the item for sale on the marketplace */
     contract = new ethers.Contract(nftmarketaddress, Market.abi, signer)
     let listingPrice = await contract.getListingPrice()
     listingPrice = listingPrice.toString()
-
-    transaction = await contract.createMarketItem(nftaddress, tokenId, price, { value: listingPrice })
+    
+    transaction = await contract.createMarketItem(nftaddress, tokenId, price, byteTags, { value: listingPrice })
     await transaction.wait()
     router.push('/')
   }
@@ -105,9 +118,15 @@ export default function CreateItem() {
             <img className="rounded mt-4" width="350" src={fileUrl} />
           )
         }
+        {/* <TagsInput></TagsInput> */}
+        <ReactTagInput 
+          tags={tags} 
+          onChange={(newTags) => setTags(newTags)}
+        />
         <button onClick={createMarket} className="font-bold mt-4 bg-pink-500 text-white rounded p-4 shadow-lg">
           Create Digital Asset
         </button>
+        
       </div>
     </div>
   )
