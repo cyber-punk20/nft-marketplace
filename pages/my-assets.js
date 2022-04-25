@@ -9,6 +9,7 @@ import {
 
 import Market from '../artifacts/contracts/Market.sol/NFTMarket.json'
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json'
+import {MAX_IMG_ID} from './constants'
 
 export default function MyAssets() {
   const [nfts, setNfts] = useState([])
@@ -16,6 +17,10 @@ export default function MyAssets() {
   useEffect(() => {
     loadNFTs()
   }, [])
+  function getImgPath(id) {
+    const imgId = id % MAX_IMG_ID + 1;
+    return './imgs/img' + imgId + '.jpeg';
+  }
   async function loadNFTs() {
     const web3Modal = new Web3Modal({
       network: "mainnet",
@@ -38,7 +43,7 @@ export default function MyAssets() {
         tokenId: i.tokenId.toNumber(),
         seller: i.seller,
         owner: i.owner,
-        image: meta.data.image,
+        image: getImgPath(i.tokenId.toNumber()),
       }
       return item
     }))
@@ -49,7 +54,7 @@ export default function MyAssets() {
   return (
     <div className="flex justify-center">
       <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+        <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
           {
             nfts.map((nft, i) => (
               <div key={i} className="border shadow rounded-xl overflow-hidden">
