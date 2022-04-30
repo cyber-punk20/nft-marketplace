@@ -94,7 +94,7 @@ def predict_price(input_params,test=False,file_loc='lgbr_model.txt'):
   # Loads model from the saved location
   model = lightgbm.Booster(model_file=file_loc)
   prediction = model.predict(inp_features)
-  
+  print(prediction[0])
   # If test print the Real and the Prediction targets
   if test:
     real_target = create_target(inp_features)

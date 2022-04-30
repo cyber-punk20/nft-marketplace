@@ -5,9 +5,11 @@ import { create as ipfsHttpClient } from 'ipfs-http-client'
 import { useRouter } from 'next/router'
 import ReactTagInput from "@pathofdev/react-tag-input";
 import "@pathofdev/react-tag-input/build/index.css";
+import axios from 'axios'
 // import TagsInput from './tag-input'
 import Web3Modal from 'web3modal'
 import {MAX_IMG_ID} from './constants'
+import { Stack } from '@mui/material'
 
 const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0')
 
@@ -26,6 +28,10 @@ export default function CreateItem() {
   const [formInput, updateFormInput] = useState({ price: '', name: '', description: '' })
   const [tags, setTags] = useState(["Iot Data"])
   const [estimated, setEstimated] = useState(false)
+  const [price, setPrice] = useState(null)
+  const [config,setConfig]= useState({})
+  const [configSet, setConfigSet]= useState(false)
+  const [priceSet, setPriceSet] = useState(false)
   const router = useRouter()
   function getImgPath(id) {
     const imgId = id % MAX_IMG_ID;
@@ -47,6 +53,12 @@ export default function CreateItem() {
       console.log('Error uploading file: ', error)
     }  
   }
+  async function onConfigfileUpload(e){
+      const file = e.target.files[0]
+      setConfig({"city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]})
+      setConfigSet(true)
+  }
+
   async function createMarket() {
     const { name, description, price } = formInput
     if (!name || !description || !price || !fileUrl) return
@@ -64,20 +76,101 @@ export default function CreateItem() {
       console.log('Error uploading file: ', error)
     }  
   }
-  async function estimatePrice(e) {
-    // console.log(e)
+
+  async function confirmEstimate(e){
     const { name, description, price } = formInput
     if (!name || !description || !fileUrl) return
-    if(e.target.checked) {
-      const web3Modal = new Web3Modal()
-      const connection = await web3Modal.connect()
-      const provider = new ethers.providers.Web3Provider(connection)
-      const signer = provider.getSigner()
-      const contract = new ethers.Contract(nftmarketaddress, Market.abi, signer)
-      const transaction = await contract.payEstimate()
-      await transaction.wait()
-      setEstimated(true)
-    }
+    const web3Modal = new Web3Modal()
+    const connection = await web3Modal.connect()
+    const provider = new ethers.providers.Web3Provider(connection)
+    const signer = provider.getSigner()
+    const contract = new ethers.Contract(nftmarketaddress, Market.abi, signer)
+    // axios.defaults.baseURL = 'http://localhost:5000'
+    // axios.post('/api/estimate', {
+    //   "city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]
+    // }).then(function(response){
+    //   console.log(response)
+    // }).catch(function(error){
+    //   console.log(error)
+    // })
+    // const res = await axios({
+    //   url: 'http://localhost:5000/api/estimate',
+    //   method: 'post',
+    //   data: {"city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]}
+    // })
+    await fetch("http://localhost:5000/api/estimate", {
+        method:"POST",
+        cache: "no-cache",
+        headers:{
+            "content_type":"application/json",
+        },
+        body:JSON.stringify(config)
+        }
+    ).then(response => {
+
+    return response.json()
+    })
+    .then(json => {
+      console.log(json)
+      console.log(typeof(json))
+      setPrice(json/10)
+      //console.log(price)
+      // this.setState({price: json[0]})
+    })
+    // console.log(res)
+    const transaction = await contract.payEstimate()
+    await transaction.wait()
+    setPriceSet(true)
+  }
+
+  async function estimatePrice(e) {
+    setEstimated(true)
+    // console.log(e)
+    // const { name, description, price } = formInput
+    // if (!name || !description || !fileUrl) return
+    // if(e.target.checked) {
+    //   const web3Modal = new Web3Modal()
+    //   const connection = await web3Modal.connect()
+    //   const provider = new ethers.providers.Web3Provider(connection)
+    //   const signer = provider.getSigner()
+    //   const contract = new ethers.Contract(nftmarketaddress, Market.abi, signer)
+    //   // axios.defaults.baseURL = 'http://localhost:5000'
+    //   // axios.post('/api/estimate', {
+    //   //   "city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]
+    //   // }).then(function(response){
+    //   //   console.log(response)
+    //   // }).catch(function(error){
+    //   //   console.log(error)
+    //   // })
+    //   // const res = await axios({
+    //   //   url: 'http://localhost:5000/api/estimate',
+    //   //   method: 'post',
+    //   //   data: {"city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]}
+    //   // })
+    //   await fetch("http://localhost:5000/api/estimate", {
+    //       method:"POST",
+    //       cache: "no-cache",
+    //       headers:{
+    //           "content_type":"application/json",
+    //       },
+    //       body:JSON.stringify({"city":"San Francisco","back":"Suburban","task":"Segmentation","content":"Cars","class_dist":[10,20,30,400,500,600,700,800,90,10]})
+    //       }
+    //   ).then(response => {
+
+    //   return response.json()
+    //   })
+    //   .then(json => {
+    //     console.log(json)
+    //     console.log(typeof(json))
+    //     setPrice(json/10)
+    //     //console.log(price)
+    //     // this.setState({price: json[0]})
+    //   })
+    //   // console.log(res)
+    //   const transaction = await contract.payEstimate()
+    //   await transaction.wait()
+    //   setEstimated(true)
+    // }
     
   }
   async function createSale(url) {
@@ -113,6 +206,7 @@ export default function CreateItem() {
     await transaction.wait()
     router.push('/')
   }
+
 
   return (
     <div className="flex justify-center">
@@ -167,24 +261,50 @@ export default function CreateItem() {
           disabled={estimated}
         /><span className="ml-2 text-gray-700">Use Price Estimation</span>
         </label>
+        
+        
         {
           estimated
           &&
           // <Card>
           //   100 ETH
           // </Card>
+    //       <div className="flex">
+    //         <div className="block p-6 rounded-lg shadow-lg bg-white max-w-sm">
+    //           <h5 className="text-gray-900 text-xl leading-tight font-medium mb-2">Estimated Price</h5>
+    //           <p className="text-gray-700 text-base mb-4">
+    //             {price} ETH
+    //           </p>
+    // {/* <button type="button" className=" inline-block px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out">Button</button> */}
+    //       </div>
+    //     </div>
+            <input
+            type="file"
+            name="Config"
+            className="my-4"
+            onChange={onConfigfileUpload}
+          />
+        }
+        {
+           configSet 
+           &&
+           <button onClick={confirmEstimate} className="font-bold bg-gray-700 text-white btn btn-primary btn-sm p-4 rounded">
+              Estimate Price
+          </button>
+        }
+      
+        {
+          priceSet
+          &&
           <div className="flex">
             <div className="block p-6 rounded-lg shadow-lg bg-white max-w-sm">
               <h5 className="text-gray-900 text-xl leading-tight font-medium mb-2">Estimated Price</h5>
               <p className="text-gray-700 text-base mb-4">
-                100 ETH
-       </p>
-    {/* <button type="button" className=" inline-block px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out">Button</button> */}
-  </div>
-</div>
-
+                {price} ETH
+              </p>
+            </div>
+          </div>
         }
-        
         <input
           placeholder="Asset Price in Eth"
           className="mt-2 border rounded p-4"
