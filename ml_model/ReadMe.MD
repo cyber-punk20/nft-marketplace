@@ -1,3 +1,11 @@
+### **Install**
+
+To use this machine learning model, you should install the packages in the requirements by running:
+
+```
+pip install -r requirements.txt
+```
+
 # **Dataset Properties:**
 
 In this project we assumed that the dataset properties could be deduced from 5 different properties. These properties are:
